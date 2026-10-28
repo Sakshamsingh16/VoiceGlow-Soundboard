@@ -3,7 +3,9 @@ name: Build VoiceGlow APK
 
 on:
   push:
-    branches: [main, master]
+    branches:
+      - main
+      - master
   workflow_dispatch:
 
 permissions:
@@ -11,7 +13,9 @@ permissions:
 
 jobs:
   build:
+    name: Build Android APK
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repository
@@ -33,15 +37,43 @@ jobs:
           sdkmanager "platforms;android-35" \
             "build-tools;35.0.0"
 
-      - name: Build Debug APK
-        uses: gradle/gradle-build-action@v3
+      - name: Verify project ZIP
+        run: |
+          test -f VoiceGlowSoundboard-GitHub-APK-Project.zip
+          unzip -l VoiceGlowSoundboard-GitHub-APK-Project.zip
+
+      - name: Extract Android project
+        run: |
+          unzip -q VoiceGlowSoundboard-GitHub-APK-Project.zip
+          echo "Extracted project files:"
+          find VoiceGlowSoundboard -maxdepth 3 -type f
+
+      - name: Verify Gradle files
+        run: |
+          test -f VoiceGlowSoundboard/settings.gradle.kts
+          test -f VoiceGlowSoundboard/build.gradle.kts
+          test -f VoiceGlowSoundboard/app/build.gradle.kts
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-          arguments: --no-daemon assembleDebug
 
-      - name: Upload APK
+      - name: Build Debug APK
+        run: |
+          gradle --no-daemon \
+            -p VoiceGlowSoundboard \
+            assembleDebug
+
+      - name: Verify APK
+        run: |
+          test -f VoiceGlowSoundboard/app/build/outputs/apk/debug/app-debug.apk
+          ls -lh VoiceGlowSoundboard/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: VoiceGlow-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: VoiceGlowSoundboard/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+          retention-days: 14
