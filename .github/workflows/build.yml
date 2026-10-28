@@ -40,19 +40,21 @@ jobs:
       - name: Verify project ZIP
         run: |
           test -f VoiceGlowSoundboard-GitHub-APK-Project.zip
-          unzip -l VoiceGlowSoundboard-GitHub-APK-Project.zip
+          unzip -t VoiceGlowSoundboard-GitHub-APK-Project.zip
 
       - name: Extract Android project
         run: |
           unzip -q VoiceGlowSoundboard-GitHub-APK-Project.zip
-          echo "Extracted project files:"
-          find VoiceGlowSoundboard -maxdepth 3 -type f
-
-      - name: Verify Gradle files
-        run: |
+          echo "Project files:"
+          ls -la VoiceGlowSoundboard
           test -f VoiceGlowSoundboard/settings.gradle.kts
           test -f VoiceGlowSoundboard/build.gradle.kts
           test -f VoiceGlowSoundboard/app/build.gradle.kts
+
+      - name: Verify JVM target configuration
+        run: |
+          grep -n 'VERSION_17' VoiceGlowSoundboard/app/build.gradle.kts
+          grep -n 'jvmTarget = "17"' VoiceGlowSoundboard/app/build.gradle.kts
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
